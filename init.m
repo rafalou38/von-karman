@@ -1,12 +1,12 @@
 function f = init(X,Y)
     consts;
 
-    f = zeros(9, ny, nx);
-    f(2, :, 5:30) = 1;
+    f = ones(9, ny, nx);
+    % f(2, :, 5:30) = 1;
 
     [rho, ux, uy] = calcul(f);
 
-    umax = 0.1;
+    
     ux = 4 * umax*(Y - 1.5).*(ny - 2 - (Y - 1.5)) / (ny - 2)^2;
 
     f = fieq(rho, ux, uy);

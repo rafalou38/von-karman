@@ -19,13 +19,15 @@ f = init(X,Y);
 % imagesc(O)
 
 
-for i=1:50
+for i=1:1000
     [rho, ux, uy] = calcul(f);
+    
+    [f, ux, uy, rho] = zouhe(X,Y,f,rho,ux,uy);
+
     f = collision(O, f,rho, ux, uy);
     f = propagation(f);
-
-
-    imagesc(squeeze(f(2,:,:)))
-    % imagesc(squeeze(ux))
-    pause(0.2);
+    
+    
+    imagesc(sqrt(ux.^2 + uy.^2))
+    pause(0.1);
 end
