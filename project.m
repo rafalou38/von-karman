@@ -22,12 +22,14 @@ f = init(X,Y);
 for i=1:1000
     [rho, ux, uy] = calcul(f);
     
-    [f, ux, uy, rho] = zouhe(X,Y,f,rho,ux,uy);
-
     f = collision(O, f,rho, ux, uy);
     f = propagation(f);
-    
-    
+
+    [rho, ux, uy] = calcul(f);
+
+    [f, ux, uy, rho] = zouhe(X,Y,f,rho,ux,uy);
+
+
     imagesc(sqrt(ux.^2 + uy.^2))
-    pause(0.1);
+    pause(0.001);
 end
