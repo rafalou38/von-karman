@@ -2,8 +2,8 @@ clear;
 clc;
 close all;
 
-nx = 250;
-ny = 200;
+nx = 25;
+ny = 20;
 f= zeros(9, ny,nx);
 f(:,3,6) = 1;
 

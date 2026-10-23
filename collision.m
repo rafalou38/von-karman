@@ -3,19 +3,15 @@ function f_out = collision(O, f, rho, ux, uy)
 
     f_out = f - (f-fieq(rho, ux, uy))/tau;
 
-    % f_out(5,ny-1,:) = f_out(5,ny-1,:) + f_out(3,ny-1,:);
-    % f_out(3,ny-1,:) = 0;
 
+    swaps = [ 2 4 ; 3 5 ; 7 9 ; 8 6];
 
-    % haut
-    tmp3 = f_out(3,ny-1,:); tmp6 = f_out(6,ny-1,:); tmp7 = f_out(7,ny-1,:);
-    f_out(3,ny-1,:) = f_out(5,ny-1,:); f_out(5,ny-1,:) = tmp3;
-    f_out(6,ny-1,:) = f_out(8,ny-1,:); f_out(8,ny-1,:) = tmp6;
-    f_out(7,ny-1,:) = f_out(9,ny-1,:); f_out(9,ny-1,:) = tmp7;
+    for k = 1:4
+        i = swaps(k,1);
+        j = swaps(k,2);
 
-    % bas
-    tmp3 = f_out(3,2,:); tmp6 = f_out(6,2,:); tmp7 = f_out(7,2,:);
-    f_out(3,2,:) = f_out(5,2,:); f_out(5,2,:) = tmp3;
-    f_out(6,2,:) = f_out(8,2,:); f_out(8,2,:) = tmp6;
-    f_out(7,2,:) = f_out(9,2,:); f_out(9,2,:) = tmp7;
+        temp = f(i,:,:);
+        f_out(i,:,:) = O .* squeeze(f_out(j,:,:)) + (1 - O) .* squeeze(f_out(i,:,:));
+        f_out(j,:,:) = O .* squeeze(temp) + (1 - O) .* squeeze(f_out(j,:,:));
+    end
 end
