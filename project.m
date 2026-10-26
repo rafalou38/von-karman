@@ -38,6 +38,12 @@ open(vid)
 it_cnt = 20000;
 for i=1:it_cnt
     [rho, ux, uy] = calcul(f);
+    
+    if any(~isfinite(f(:))) || any(rho(:) <= 0, "all")
+        error("Divergence à i=%d : rho=[%g,%g]", ...
+            i, min(rho(:)), max(rho(:)));
+    end
+
     [f, ux, uy, rho] = zouhe(X,Y,f,rho,ux,uy);
     f = collision(O, f,rho, ux, uy);
     f = propagation(f);
