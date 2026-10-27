@@ -2,7 +2,7 @@
 #include "Eigen/Core"
 #include <raylib.h>
 
-VonKarman::VonKarman() {
+VonKarman::VonKarman() : is_running(false) {
     f.fill(ArrayXXd::Zero(ny, nx));
     f_temp.fill(ArrayXXd::Zero(ny, nx));
 
@@ -36,6 +36,7 @@ VonKarman::VonKarman() {
 }
 
 VonKarman::~VonKarman() {
+    stop();
     delete[] pixels;
     UnloadTexture(texture);
 }
@@ -45,9 +46,44 @@ void VonKarman::init() {
     texture = LoadTextureFromImage(GenImageColor(nx, ny, BLACK));
 
     double r = 0.1 * ny;
-    auto cylindre =
-        ((X - 0.2 * nx).square() + (Y - 0.5 * ny - 1).square() <= (r * r)+1.0);
+    auto cylindre = ((X - 0.2 * nx).square() + (Y - 0.5 * ny - 1).square() <=
+                     (r * r) + 1.0);
     O = cylindre.select(1.0, O);
+}
+void VonKarman::start() {
+    is_running = true;
+    physics_thread = std::thread([this]() {
+        while (is_running) {
+            time_calc();
+        }
+    });
+}
+
+void VonKarman::stop() {
+    if (!is_running)
+        return;
+
+    is_running = false;
+    if (physics_thread.joinable()) {
+        physics_thread.join();
+    }
+}
+
+void VonKarman::time_calc() {
+    auto begin = std::chrono::steady_clock::now();
+    calcul();
+    auto end = std::chrono::steady_clock::now();
+
+    computation_time_s +=
+        std::chrono::duration_cast<std::chrono::microseconds>(end - begin)
+            .count();
+    iteration++;
+    if (iteration % 100 == 0) {
+        computation_time = computation_time_s / 100;
+        std::cout << "Average computation time: " << computation_time << " µs"
+                  << std::endl;
+        computation_time_s = 0;
+    }
 }
 
 void VonKarman::calcul() {
@@ -134,17 +170,23 @@ void VonKarman::calcul() {
     // # Calcul macro #
     // ################
     rho = f[0] + f[1] + f[2] + f[3] + f[4] + f[5] + f[6] + f[7] + f[8];
-    ux = ((f[1] + f[5] + f[8]) - (f[3] + f[6] + f[7])) / rho;
-    uy = ((f[2] + f[5] + f[6]) - (f[4] + f[7] + f[8])) / rho;
+    {
+        std::lock_guard<std::mutex> lock(mtx);
 
-    ux = mask.select(0.0, ux);
-    uy = mask.select(0.0, uy);
+        ux = ((f[1] + f[5] + f[8]) - (f[3] + f[6] + f[7])) / rho;
+        uy = ((f[2] + f[5] + f[6]) - (f[4] + f[7] + f[8])) / rho;
+
+        ux = mask.select(0.0, ux);
+        uy = mask.select(0.0, uy);
+    }
 
     // #####################
     // # Collision fluides #
     // #####################
     ArrayXXd uu = ux.square() + uy.square();
     double omega = 1.0 / tau;
+
+#pragma omp parallel for
     for (int i = 0; i < 9; i++) {
         ArrayXXd eiu = ex[i] * ux + ey[i] * uy;
         ArrayXXd f_eq =
@@ -164,12 +206,16 @@ void VonKarman::draw(DrawMode mode) {
     case VELOCITY:
         display_mat = ux.square() + uy.square();
         break;
-    case VORTICITY:
-        display_mat.block(1, 1, ny - 2, nx - 2) =
-            0.5 * (uy.block(1, 2, ny - 2, nx - 2) -
-                   uy.block(1, 0, ny - 2, nx - 2)) -
-            0.5 * (ux.block(2, 1, ny - 2, nx - 2) -
-                   ux.block(0, 1, ny - 2, nx - 2)) ;
+    case VORTICITY: 
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+
+            display_mat.block(1, 1, ny - 2, nx - 2) =
+                0.5 * (uy.block(1, 2, ny - 2, nx - 2) -
+                    uy.block(1, 0, ny - 2, nx - 2)) -
+                0.5 * (ux.block(2, 1, ny - 2, nx - 2) -
+                    ux.block(0, 1, ny - 2, nx - 2));
+        };
         break;
     }
 
@@ -183,11 +229,9 @@ void VonKarman::draw(DrawMode mode) {
         mi = 0.0;
         m = std::max(1e-6, m);
     } else if (mode == VORTICITY) {
-        // La vorticité doit être parfaitement symétrique autour de 0
         m = std::max({1e-6, std::abs(m), std::abs(mi)});
         mi = -m;
     }
-
 
     display_mat = (display_mat - mi) / (m - mi);
 

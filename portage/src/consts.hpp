@@ -8,6 +8,8 @@
 #define OBSTACLE Color{60, 50, 168, 255}
 #define NEUTRAL Color{168, 50, 60, 255}
 
+#define PARALLEL_COMPUTE
+
 const int ex[] = { 0, 1, 0, -1, 0, 1, -1, -1, 1 };
 const int ey[] = { 0, 0, 1, 0, -1, 1, 1, -1, -1 };
 const double w[] = { 

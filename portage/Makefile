@@ -2,7 +2,7 @@ MAKEFLAGS += --no-builtin-rules
 .SUFFIXES:
 
 CXX =g++
-CXXFLAGS = -std=c++20 -Wall
+CXXFLAGS = -fopenmp -std=c++20 -Wall
 
 CXXFLAGS += -O3
 # CXXFLAGS += -ggdb3
