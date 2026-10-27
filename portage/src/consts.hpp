@@ -1,5 +1,5 @@
-#define nx 400
-#define ny 100
+#define nx 1600
+#define ny 800
 
 #define umax 0.1
 #define nu 0.02
@@ -9,7 +9,8 @@
 #define NEUTRAL Color{168, 50, 60, 255}
 
 // #define PARALLEL_COMPUTE
-#define ITER_PER_FRAME 2
+#define ITER_PER_FRAME 5
+// #define RECORD
 
 #define SCALING 1.0
 

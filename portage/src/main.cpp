@@ -16,109 +16,109 @@
 using Eigen::MatrixXd;
 
 VonKarman vk;
+bool flag_record = false;
 
-int main() {
+FILE *ffmpeg;
+
+int main(int argc, char *argv[]) {
+    if (argc > 1) {
+        if (std::string(argv[1]) == "--help" || std::string(argv[1]) == "-h") {
+            std::cout << "Usage: " << argv[0] << " [options]\n"
+                      << "Options:\n"
+                      << "  --help, -h    Show this help message\n"
+                      << "  --record, -r  Record the simulation\n";
+            return 0;
+        } else if (std::string(argv[1]) == "--record" ||
+                   std::string(argv[1]) == "-r") {
+            std::cout << "Recording enabled.\n";
+            flag_record = true;
+        }
+    }
+
     int width = nx * SCALING;
-    int height = ny * SCALING;
+    int height = ny * SCALING * 2;
 
     SetTraceLogLevel(LOG_WARNING);
     SetConfigFlags(FLAG_MSAA_4X_HINT);
 
     InitWindow(width, height, "Simulation de Von_Karman");
-    // SetWindowState(FLAG_WINDOW_RESIZABLE);
-    // SetWindowState(FLAG_WINDOW_MAXIMIZED);
 
     vk.init();
-#ifdef PARALLEL_COMPUTE
-    SetTargetFPS(60);
-    vk.start();
-#endif
-
-    char cmd[200];
-    time_t now = time(0);
-
-    sprintf(cmd,
+    if (flag_record) {
+        char cmd[200];
+        time_t now = time(0);
+        sprintf(
+            cmd,
             "ffmpeg -y -f rawvideo -vcodec rawvideo -pix_fmt rgba -s %dx%d "
             "-r 60 -i - -c:v libx264 -preset ultrafast -crf 18 output_%ld.mp4",
             width, height, now);
-    FILE *ffmpeg = popen(cmd, "w");
-    RenderTexture2D target = LoadRenderTexture(width, height);
-
-    DrawMode mode = VORTICITY;
+        ffmpeg = popen(cmd, "w");
+    } else {
+        SetTargetFPS(60);
+        vk.start();
+    }
+    RenderTexture2D target = LoadRenderTexture(width, height / 2);
+    RenderTexture2D target_final = LoadRenderTexture(width, height);
 
     int prev_frame_draw = 0;
-
     while (!WindowShouldClose()) {
-        if (IsWindowResized()) {
-            width = GetRenderWidth();
-            height = GetRenderHeight();
+        if (flag_record) {
+            vk.time_calc();
         }
 
-        if (IsKeyPressed(KEY_TAB)) {
-            mode = static_cast<DrawMode>((mode + 1) % 2);
-        }
-
-#ifndef PARALLEL_COMPUTE
-        vk.time_calc();
-#endif
-        // BeginDrawing();
         BeginTextureMode(target);
-        vk.draw(mode);
-
-        char mode_str[100];
-        switch (mode) {
-        case DENSITY:
-            sprintf(mode_str, "DENSITY");
-            break;
-        case VELOCITY:
-            sprintf(mode_str, "VELOCITY");
-            break;
-        case VORTICITY:
-            sprintf(mode_str, "VORTICITY");
-            break;
-        }
+        vk.draw(VORTICITY);
+        EndTextureMode();
+        BeginTextureMode(target_final);
+        vk.draw(VELOCITY);
+        DrawTextureRec(target.texture,
+                       Rectangle{0, 0, (float)target.texture.width,
+                                 (float)-target.texture.height},
+                       Vector2{0, ny}, WHITE);
         EndTextureMode();
 
-        if (vk.iteration - prev_frame_draw >= ITER_PER_FRAME) {
+        if (flag_record && vk.iteration - prev_frame_draw >= ITER_PER_FRAME) {
             prev_frame_draw = vk.iteration;
             // 3. Enregistrer l'image dans un fichier
-            Image screen = LoadImageFromTexture(target.texture);
+            Image screen = LoadImageFromTexture(target_final.texture);
             ImageFlipVertical(&screen); // Indispensable : OpenGL stocke les
                                         // textures à l'envers
             fwrite(screen.data, 1, screen.width * screen.height * 4, ffmpeg);
             UnloadImage(screen);
         }
 
-        // 4. Afficher la texture sur la vraie fenêtre
         BeginDrawing();
         ClearBackground(BLACK);
-        // On inverse la hauteur (hauteur négative) pour remettre l'image à
-        // l'endroit à l'écran
-        DrawTextureRec(target.texture,
-                       Rectangle{0, 0, (float)target.texture.width,
-                                 (float)-target.texture.height},
+        DrawTextureRec(target_final.texture,
+                       Rectangle{0, 0, (float)target_final.texture.width,
+                                 (float)-target_final.texture.height},
                        Vector2{0, 0}, WHITE);
 
-        DrawText(mode_str, 10, 5 + 10 / 2, 20 / 2, NEUTRAL);
+        char mode_str[100];
 
-#ifdef PARALLEL_COMPUTE
-        sprintf(mode_str, "SIM: %.0f Hz", 1e6 / vk.computation_time);
-        DrawText(mode_str, 10, 5 + 30 / 2, 20 / 2, NEUTRAL);
-        sprintf(mode_str, "FPS: %d Hz", GetFPS());
-        DrawText(mode_str, 10, 5 + 50 / 2, 20 / 2, NEUTRAL);
-        sprintf(mode_str, "FRAME: %d", vk.iteration);
-        DrawText(mode_str, 10, 5 + 70 / 2, 20 / 2, NEUTRAL);
-#else
-        sprintf(mode_str, "FPS: %d Hz", GetFPS());
-        DrawText(mode_str, 10, 5 + 30 / 2, 10, NEUTRAL);
-        sprintf(mode_str, "FRAME: %d Hz", vk.iteration);
-        DrawText(mode_str, 10, 5 + 50 / 2, 10, NEUTRAL);
-#endif
+        if (flag_record) {
+            sprintf(mode_str, "RECORDING");
+            DrawText(mode_str, 5, 5, 10, NEUTRAL);
+            sprintf(mode_str, "FPS: %d Hz", GetFPS());
+            DrawText(mode_str, 5, 15, 10, NEUTRAL);
+            sprintf(mode_str, "FRAME: %d Hz", vk.iteration);
+            DrawText(mode_str, 5, 25, 10, NEUTRAL);
+        } else {
+            sprintf(mode_str, "SIM: %.0f Hz", 1e6 / vk.computation_time);
+            DrawText(mode_str, 10, 5, 20 / 2, NEUTRAL);
+            sprintf(mode_str, "FPS: %d Hz", GetFPS());
+            DrawText(mode_str, 10, 15, 20 / 2, NEUTRAL);
+            sprintf(mode_str, "FRAME: %d", vk.iteration);
+            DrawText(mode_str, 10, 25, 20 / 2, NEUTRAL);
+        }
+
         EndDrawing();
     }
 
     CloseWindow();
 
-    pclose(ffmpeg);
+    if (flag_record) {
+        pclose(ffmpeg);
+    }
     return 0;
 }
