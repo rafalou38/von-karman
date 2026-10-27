@@ -4,8 +4,8 @@ MAKEFLAGS += --no-builtin-rules
 CXX =g++
 CXXFLAGS = -std=c++20 -Wall
 
-
-CXXFLAGS += -ggdb3
+CXXFLAGS += -O3
+# CXXFLAGS += -ggdb3
 # DEBUG = true
 
 INCLUDE_PATHS = -I. -Ieigen-5.0.1

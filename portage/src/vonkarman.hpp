@@ -9,6 +9,8 @@
 using Eigen::MatrixXd;
 using Eigen::ArrayXXd;
 
+enum DrawMode { VELOCITY, VORTICITY,DENSITY };
+
 class VonKarman
 {
 private:
@@ -16,6 +18,8 @@ private:
 public:
     std::array<ArrayXXd, 9> f;
     std::array<ArrayXXd, 9> f_temp;
+
+    ArrayXXd O;
 
     ArrayXXd X;
     ArrayXXd Y;
@@ -25,10 +29,17 @@ public:
     ArrayXXd uy;
 
 
+    Color* pixels;
+    Texture2D texture;
+    Eigen::ArrayXXd display_mat;
+
+
     VonKarman();
     ~VonKarman();
 
+    void init();
+
     void calcul();   
 
-    void draw();
+    void draw(DrawMode mode = VELOCITY);
 };

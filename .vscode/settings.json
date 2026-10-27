@@ -3,4 +3,7 @@
 	"explorer.fileNesting.patterns": {
 		"*.cpp": "${capture}.hpp"
 	},
+	"cSpell.words": [
+		"Vorticité"
+	],
 }
