@@ -5,6 +5,7 @@
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
+#include <ctime>
 #include <iostream>
 
 #include <raylib.h>
@@ -17,8 +18,8 @@ using Eigen::MatrixXd;
 VonKarman vk;
 
 int main() {
-    int width = nx * 2;
-    int height = ny * 2;
+    int width = nx * SCALING;
+    int height = ny * SCALING;
 
     SetTraceLogLevel(LOG_WARNING);
     SetConfigFlags(FLAG_MSAA_4X_HINT);
@@ -33,8 +34,19 @@ int main() {
     vk.start();
 #endif
 
+    char cmd[200];
+    time_t now = time(0);
 
-    DrawMode mode = VELOCITY;
+    sprintf(cmd,
+            "ffmpeg -y -f rawvideo -vcodec rawvideo -pix_fmt rgba -s %dx%d "
+            "-r 60 -i - -c:v libx264 -preset ultrafast -crf 18 output_%ld.mp4",
+            width, height, now);
+    FILE *ffmpeg = popen(cmd, "w");
+    RenderTexture2D target = LoadRenderTexture(width, height);
+
+    DrawMode mode = VORTICITY;
+
+    int prev_frame_draw = 0;
 
     while (!WindowShouldClose()) {
         if (IsWindowResized()) {
@@ -46,12 +58,12 @@ int main() {
             mode = static_cast<DrawMode>((mode + 1) % 2);
         }
 
-        BeginDrawing();
-        vk.draw(mode);
-
 #ifndef PARALLEL_COMPUTE
-  vk.time_calc();
+        vk.time_calc();
 #endif
+        // BeginDrawing();
+        BeginTextureMode(target);
+        vk.draw(mode);
 
         char mode_str[100];
         switch (mode) {
@@ -65,25 +77,48 @@ int main() {
             sprintf(mode_str, "VORTICITY");
             break;
         }
-        DrawText(mode_str, 10, 10, 20, NEUTRAL);
+        EndTextureMode();
 
-        #ifdef PARALLEL_COMPUTE
-        sprintf(mode_str, "SIM: %.0f", 1e6 / vk.computation_time);
-        DrawText(mode_str, 10, 30, 20, NEUTRAL);
-        sprintf(mode_str, "FPS: %d", GetFPS());
-        DrawText(mode_str, 10, 50, 20, NEUTRAL);
+        if (vk.iteration - prev_frame_draw >= ITER_PER_FRAME) {
+            prev_frame_draw = vk.iteration;
+            // 3. Enregistrer l'image dans un fichier
+            Image screen = LoadImageFromTexture(target.texture);
+            ImageFlipVertical(&screen); // Indispensable : OpenGL stocke les
+                                        // textures à l'envers
+            fwrite(screen.data, 1, screen.width * screen.height * 4, ffmpeg);
+            UnloadImage(screen);
+        }
+
+        // 4. Afficher la texture sur la vraie fenêtre
+        BeginDrawing();
+        ClearBackground(BLACK);
+        // On inverse la hauteur (hauteur négative) pour remettre l'image à
+        // l'endroit à l'écran
+        DrawTextureRec(target.texture,
+                       Rectangle{0, 0, (float)target.texture.width,
+                                 (float)-target.texture.height},
+                       Vector2{0, 0}, WHITE);
+
+        DrawText(mode_str, 10, 5 + 10 / 2, 20 / 2, NEUTRAL);
+
+#ifdef PARALLEL_COMPUTE
+        sprintf(mode_str, "SIM: %.0f Hz", 1e6 / vk.computation_time);
+        DrawText(mode_str, 10, 5 + 30 / 2, 20 / 2, NEUTRAL);
+        sprintf(mode_str, "FPS: %d Hz", GetFPS());
+        DrawText(mode_str, 10, 5 + 50 / 2, 20 / 2, NEUTRAL);
         sprintf(mode_str, "FRAME: %d", vk.iteration);
-        DrawText(mode_str, 10, 70, 20, NEUTRAL);
-        #else
-        sprintf(mode_str, "FPS: %d", GetFPS());
-        DrawText(mode_str, 10, 30, 20, NEUTRAL);
-        sprintf(mode_str, "FRAME: %d", vk.iteration);
-        DrawText(mode_str, 10, 50, 20, NEUTRAL);
-        #endif
-        // DrawFPS(10, 10);
+        DrawText(mode_str, 10, 5 + 70 / 2, 20 / 2, NEUTRAL);
+#else
+        sprintf(mode_str, "FPS: %d Hz", GetFPS());
+        DrawText(mode_str, 10, 5 + 30 / 2, 10, NEUTRAL);
+        sprintf(mode_str, "FRAME: %d Hz", vk.iteration);
+        DrawText(mode_str, 10, 5 + 50 / 2, 10, NEUTRAL);
+#endif
         EndDrawing();
     }
 
     CloseWindow();
+
+    pclose(ffmpeg);
     return 0;
 }

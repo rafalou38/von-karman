@@ -45,8 +45,8 @@ void VonKarman::init() {
     pixels = new Color[nx * ny];
     texture = LoadTextureFromImage(GenImageColor(nx, ny, BLACK));
 
-    double r = 0.1 * ny;
-    auto cylindre = ((X - 0.2 * nx).square() + (Y - 0.5 * ny - 1).square() <=
+    double r = 0.4 * ny;
+    auto cylindre = ((X - 0.2 * nx).square() + (Y - 1).square() <=
                      (r * r) + 1.0);
     O = cylindre.select(1.0, O);
 }
@@ -78,12 +78,12 @@ void VonKarman::time_calc() {
         std::chrono::duration_cast<std::chrono::microseconds>(end - begin)
             .count();
     iteration++;
-    if (iteration % 100 == 0) {
-        computation_time = computation_time_s / 100;
-        std::cout << "Average computation time: " << computation_time << " µs"
-                  << std::endl;
-        computation_time_s = 0;
-    }
+    computation_time = computation_time_s / iteration;
+    // if (iteration % 100 == 0) {
+    //     std::cout << "Average computation time: " << computation_time << " µs"
+    //               << std::endl;
+    //     // computation_time_s = 0;
+    // }
 }
 
 void VonKarman::calcul() {
@@ -250,5 +250,5 @@ void VonKarman::draw(DrawMode mode) {
         }
     }
     UpdateTexture(texture, pixels);
-    DrawTextureEx(texture, Vector2{0.0f, 0.0f}, 0.0f, 2.0f, WHITE);
+    DrawTextureEx(texture, Vector2{0.0f, 0.0f}, 0.0f, SCALING, WHITE);
 }
