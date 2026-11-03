@@ -56,5 +56,5 @@ public:
     void calcul();   
     void time_calc();
 
-    void draw(DrawMode mode = VELOCITY);
+    Texture2D draw(DrawMode mode = VELOCITY);
 };

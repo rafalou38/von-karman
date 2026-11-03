@@ -44,11 +44,6 @@ VonKarman::~VonKarman() {
 void VonKarman::init() {
     pixels = new Color[nx * ny];
     texture = LoadTextureFromImage(GenImageColor(nx, ny, BLACK));
-
-    double r = 0.35 * ny + 0.5;
-    auto cylindre = ((X - r*1.5).square() + (Y - 1).square() <=
-                     (r * r));
-    O = cylindre.select(1.0, O);
 }
 void VonKarman::start() {
     is_running = true;
@@ -195,9 +190,8 @@ void VonKarman::calcul() {
     }
 }
 
-void VonKarman::draw(DrawMode mode) {
+Texture2D VonKarman::draw(DrawMode mode) {
     display_mat.setZero();
-    // Vorticité
 
     switch (mode) {
     case DENSITY:
@@ -250,5 +244,6 @@ void VonKarman::draw(DrawMode mode) {
         }
     }
     UpdateTexture(texture, pixels);
-    DrawTextureEx(texture, Vector2{0.0f, 0.0f}, 0.0f, 1.0f, WHITE);
+    return texture;
+    // DrawTextureEx(texture, Vector2{0.0f, 0.0f}, 0.0f, 1.0f, WHITE);
 }

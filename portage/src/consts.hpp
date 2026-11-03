@@ -1,5 +1,5 @@
-#define nx 1600
-#define ny 800
+#define nx 800
+#define ny 200
 
 #define umax 0.1
 #define nu 0.02
