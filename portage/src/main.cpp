@@ -60,12 +60,16 @@ int main(int argc, char *argv[]) {
     InitWindow(width, height, "Simulation de Von_Karman");
 
     vk.init();
-    if (!flag_interactive) {
-        double r = 0.35 * ny + 0.5;
-        auto cylindre =
-            ((vk.X - r * 1.5).square() + (vk.Y - 1).square() <= (r * r));
-        vk.O = cylindre.select(1.0, vk.O);
-    }
+    // if (!flag_interactive) {
+        // double r = 0.35 * ny + 0.5;
+        // auto cylindre =
+        //     ((vk.X - r * 1.5).square() + (vk.Y - 1).square() <= (r * r));
+        // vk.O = cylindre.select(1.0, vk.O);
+    // }
+
+    Rectangle rect = {0,0,nx,ny};
+    // https://arcade.pirillo.com/maze-maker.html
+    vk.load_image("./maze4.png", rect);
 
     if (flag_record) {
         recorder.start(width, height);
@@ -90,7 +94,7 @@ int main(int argc, char *argv[]) {
         if(flag_interactive){
             if (IsKeyPressed(KEY_TAB)) {
                 current_mode = static_cast<DrawMode>(
-                    (static_cast<int>(current_mode) + 1) % 2);
+                    (static_cast<int>(current_mode) + 1) % 3);
             }
         }
 
@@ -115,7 +119,7 @@ int main(int argc, char *argv[]) {
             DrawText(txt, 5, 5, 10, NEUTRAL);
             sprintf(txt, "FPS: %d Hz", GetFPS());
             DrawText(txt, 5, 15, 10, NEUTRAL);
-            sprintf(txt, "FRAME: %d Hz", vk.iteration);
+            sprintf(txt, "FRAME: %d", vk.iteration);
             DrawText(txt, 5, 25, 10, NEUTRAL);
         } else {
             sprintf(txt, "SIM: %.0f Hz", 1e6 / vk.computation_time);

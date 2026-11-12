@@ -54,7 +54,10 @@ public:
     void stop();
 
     void calcul();   
+    void source();   
     void time_calc();
+
+    void load_image(const char* src, Rectangle rect);
 
     Texture2D draw(DrawMode mode = VELOCITY);
 };

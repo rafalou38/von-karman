@@ -23,9 +23,11 @@ VonKarman::VonKarman() : is_running(false) {
     rho = ArrayXXd::Ones(ny, nx);
     uy = ArrayXXd::Zero(ny, nx);
     double H = ny - 2.0;
-    ux = 4 * umax * (Y - 0.5) * (H - (Y - 0.5)) / (H * H);
+    ux = 4 * 0 * (Y - 0.5) * (H - (Y - 0.5)) / (H * H);
     ux.row(0).setZero();
     ux.row(ny - 1).setZero();
+
+    // source();
 
     auto uu = ux.square() + uy.square();
     for (int i = 0; i < 9; i++) {
@@ -54,6 +56,24 @@ void VonKarman::start() {
     });
 }
 
+void VonKarman::load_image(const char *src, Rectangle rect) {
+    Image img = LoadImage(src);
+    ImageResizeNN(&img, rect.width, rect.height);
+
+    Color c;
+    for (int y = 0; y < rect.height; y++) {
+        for (int x = 0; x < rect.width; x++) {
+            c = GetImageColor(img, x, y);
+
+            if(c.r + c.g + c.b < 100){
+                O(y,x) = 1;
+            }else{
+                O(y,x) = 0;
+            }
+        }
+    }
+}
+
 void VonKarman::stop() {
     if (!is_running)
         return;
@@ -75,10 +95,46 @@ void VonKarman::time_calc() {
     iteration++;
     computation_time = computation_time_s / iteration;
     // if (iteration % 100 == 0) {
-    //     std::cout << "Average computation time: " << computation_time << " µs"
+    //     std::cout << "Average computation time: " << computation_time << "
+    //     µs"
     //               << std::endl;
     //     // computation_time_s = 0;
     // }
+}
+
+void VonKarman::source() {
+    // double cx = 272 * factor;
+    // double cy = 130 * factor;
+    // double cx = 50;
+    // double cy = 48;
+    double cx = nx/2 * factor;
+    double cy = ny/2 * factor;
+    // double R = 4.0 * factor + 0.5;
+    double R = 4+0.5;
+    double rho_source = 0.2;
+    double ux_source = 0.0;
+    double uy_source = 0.0;
+
+    auto dist2 = (X - cx).pow(2) + (Y - cy).pow(2);
+    auto mask = (dist2 <= pow(R, 2));
+
+    rho = mask.select(rho_source, rho);
+    ux = mask.select(ux_source, ux);
+    uy = mask.select(uy_source, uy);
+
+    // Calcul de l'équilibre pour la source
+    double u2 = ux_source * ux_source + uy_source * uy_source;
+    
+    for (int k = 0; k < 9; ++k) {
+        double eu = ex[k] * ux_source + ey[k] * uy_source;
+        
+        // Valeur scalaire de f_eq pour la source (constante sur toute la zone)
+        double f_source_val = w[k] * rho_source * 
+                              (1.0 + 3.0 * eu + 4.5 * eu * eu - 1.5 * u2);
+        
+        // Remplacement exclusif dans la zone du masque
+        f[k] = mask.select(f_source_val, f[k]);
+    }
 }
 
 void VonKarman::calcul() {
@@ -104,42 +160,62 @@ void VonKarman::calcul() {
     // #        Zou He          #
     // ##########################
     // -> Entrée
-    uy.col(0).setZero();
-    double H = ny - 2.0;
-    ux.col(0) =
-        4.0 * umax * (Y.col(0) - 0.5) * (H - (Y.col(0) - 0.5)) / (H * H);
-    ux(0, 0) = 0.0;
-    ux(ny - 1, 0) = 0.0;
+    // uy.col(0).setZero();
+    // double H = ny - 2.0;
+    // ux.col(0) =
+    //     4.0 * umax * (Y.col(0) - 0.5) * (H - (Y.col(0) - 0.5)) / (H * H);
+    // ux(0, 0) = 0.0;
+    // ux(ny - 1, 0) = 0.0;
 
-    rho.col(0) = (f[0].col(0) + f[2].col(0) + f[4].col(0) +
-                  2.0 * (f[3].col(0) + f[6].col(0) + f[7].col(0))) /
-                 (1.0 - ux.col(0));
+    // rho.col(0) = (f[0].col(0) + f[2].col(0) + f[4].col(0) +
+    //               2.0 * (f[3].col(0) + f[6].col(0) + f[7].col(0))) /
+    //              (1.0 - ux.col(0));
 
-    f[1].col(0) = f[3].col(0) + rho.col(0) * (2.0 / 3.0) * ux.col(0);
-    f[5].col(0) = f[7].col(0) + (f[4].col(0) - f[2].col(0)) / 2.0 +
-                  rho.col(0) * uy.col(0) / 2.0 + rho.col(0) * ux.col(0) / 6.0;
-    f[8].col(0) = f[6].col(0) + (f[2].col(0) - f[4].col(0)) / 2.0 -
-                  rho.col(0) * uy.col(0) / 2.0 + rho.col(0) * ux.col(0) / 6.0;
+    // f[1].col(0) = f[3].col(0) + rho.col(0) * (2.0 / 3.0) * ux.col(0);
+    // f[5].col(0) = f[7].col(0) + (f[4].col(0) - f[2].col(0)) / 2.0 +
+    //               rho.col(0) * uy.col(0) / 2.0 + rho.col(0) * ux.col(0)
+    //               / 6.0;
+    // f[8].col(0) = f[6].col(0) + (f[2].col(0) - f[4].col(0)) / 2.0 -
+    //               rho.col(0) * uy.col(0) / 2.0 + rho.col(0) * ux.col(0)
+    //               / 6.0;
 
-    // -> Sortie
-    rho.col(nx - 1).setConstant(1.0);
-    uy.col(nx - 1).setZero();
-    ux.col(nx - 1) =
-        -1.0 +
-        (f[0].col(nx - 1) + f[2].col(nx - 1) + f[4].col(nx - 1) +
-         2.0 * (f[1].col(nx - 1) + f[5].col(nx - 1) + f[8].col(nx - 1))) /
-            rho.col(nx - 1);
+    // // -> Sortie
+    // rho.col(nx - 1).setConstant(1.0);
+    // uy.col(nx - 1).setZero();
+    // ux.col(nx - 1) =
+    //     -1.0 +
+    //     (f[0].col(nx - 1) + f[2].col(nx - 1) + f[4].col(nx - 1) +
+    //      2.0 * (f[1].col(nx - 1) + f[5].col(nx - 1) + f[8].col(nx - 1))) /
+    //         rho.col(nx - 1);
 
-    f[3].col(nx - 1) =
-        f[1].col(nx - 1) - rho.col(nx - 1) * (2.0 / 3.0) * ux.col(nx - 1);
-    f[7].col(nx - 1) = f[5].col(nx - 1) +
-                       (f[2].col(nx - 1) - f[4].col(nx - 1)) / 2.0 -
-                       rho.col(nx - 1) * uy.col(nx - 1) / 2.0 -
-                       rho.col(nx - 1) * ux.col(nx - 1) / 6.0;
-    f[6].col(nx - 1) = f[8].col(nx - 1) +
-                       (f[4].col(nx - 1) - f[2].col(nx - 1)) / 2.0 +
-                       rho.col(nx - 1) * uy.col(nx - 1) / 2.0 -
-                       rho.col(nx - 1) * ux.col(nx - 1) / 6.0;
+    // f[3].col(nx - 1) =
+    //     f[1].col(nx - 1) - rho.col(nx - 1) * (2.0 / 3.0) * ux.col(nx - 1);
+    // f[7].col(nx - 1) = f[5].col(nx - 1) +
+    //                    (f[2].col(nx - 1) - f[4].col(nx - 1)) / 2.0 -
+    //                    rho.col(nx - 1) * uy.col(nx - 1) / 2.0 -
+    //                    rho.col(nx - 1) * ux.col(nx - 1) / 6.0;
+    // f[6].col(nx - 1) = f[8].col(nx - 1) +
+    //                    (f[4].col(nx - 1) - f[2].col(nx - 1)) / 2.0 +
+    //                    rho.col(nx - 1) * uy.col(nx - 1) / 2.0 -
+    //                    rho.col(nx - 1) * ux.col(nx - 1) / 6.0;
+
+    source();
+
+    // Application du gradient nul sur les 4 bords pour absorber les particules
+    // incidentes
+    for (int k = 0; k < 9; ++k) {
+        // Bord Gauche (x = 0)
+        f[k].col(0) = f[k].col(1);
+
+        // Bord Droit (x = nx-1)
+        f[k].col(nx - 1) = f[k].col(nx - 2);
+
+        // Bord Bas (y = 0)
+        f[k].row(0) = f[k].row(1);
+
+        // Bord Haut (y = ny-1)
+        f[k].row(ny - 1) = f[k].row(ny - 2);
+    }
 
     // -> Paroi
     auto mask = (O == 1.0);
@@ -193,24 +269,25 @@ void VonKarman::calcul() {
 Texture2D VonKarman::draw(DrawMode mode) {
     display_mat.setZero();
 
+    double ex = 1;
+
     switch (mode) {
     case DENSITY:
         display_mat = rho;
         break;
     case VELOCITY:
         display_mat = ux.square() + uy.square();
+        ex = 0.3;
         break;
-    case VORTICITY: 
-        {
-            std::lock_guard<std::mutex> lock(mtx);
+    case VORTICITY: {
+        std::lock_guard<std::mutex> lock(mtx);
 
-            display_mat.block(1, 1, ny - 2, nx - 2) =
-                0.5 * (uy.block(1, 2, ny - 2, nx - 2) -
-                    uy.block(1, 0, ny - 2, nx - 2)) -
-                0.5 * (ux.block(2, 1, ny - 2, nx - 2) -
-                    ux.block(0, 1, ny - 2, nx - 2));
-        };
-        break;
+        display_mat.block(1, 1, ny - 2, nx - 2) =
+            0.5 * (uy.block(1, 2, ny - 2, nx - 2) -
+                   uy.block(1, 0, ny - 2, nx - 2)) -
+            0.5 * (ux.block(2, 1, ny - 2, nx - 2) -
+                   ux.block(0, 1, ny - 2, nx - 2));
+    }; break;
     }
 
     double m = display_mat.maxCoeff();
@@ -234,12 +311,25 @@ Texture2D VonKarman::draw(DrawMode mode) {
             int index = y * nx + x;
 
             if (O(y, x) == 1.0) {
-                pixels[index] = OBSTACLE;
+                pixels[index] = BLACK;
             } else {
+                double u = pow(display_mat(y, x), ex);
+                // linear-gradient(30deg,
+                // var(--255-128-139,#FF808B) -9.12%,
+                // var(--55-70-255,#3746FF) 28.53%,
+                // #3442DF 78.05%,
+                // var(--25-15-60,#190F3C) 100%
+                Color colorA = GetColor(0x190F3Cff);
+                Color colorB = GetColor(0x3746FFff);
+                Color colorC = GetColor(0xFF808Bff);
+                Color out;
+                if (u < 0.5)
+                    out =ColorLerp(colorA, colorB, u*2);
+                else
+                    out = ColorLerp(colorB, colorC, (u-0.5)*2);
 
-                double u = display_mat(y, x);
-                unsigned char v = 255 * u;
-                pixels[index] = Color{v, v, v, 255};
+                // unsigned char v = 255 * u;
+                pixels[index] = out;
             }
         }
     }

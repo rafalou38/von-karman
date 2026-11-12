@@ -1,8 +1,11 @@
-#define nx 800
-#define ny 200
+#define factor 1
+#define nx (2846/2)
+#define ny (2846/2)
+// #define nx (512*factor)
+// #define ny (512*factor)
 
 #define umax 0.1
-#define nu 0.02
+#define nu 0.05
 #define tau ((6*nu+1)/2)
 
 #define OBSTACLE Color{60, 50, 168, 255}
