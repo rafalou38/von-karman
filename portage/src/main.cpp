@@ -8,6 +8,7 @@
 #include <ctime>
 #include <iostream>
 
+#include <ostream>
 #include <raylib.h>
 #include <raymath.h>
 
@@ -61,16 +62,39 @@ int main(int argc, char *argv[]) {
 
     vk.init();
     // if (!flag_interactive) {
-        // double r = 0.35 * ny + 0.5;
-        // auto cylindre =
-        //     ((vk.X - r * 1.5).square() + (vk.Y - 1).square() <= (r * r));
-        // vk.O = cylindre.select(1.0, vk.O);
+        // double r = 0.1 * ny + 0.5;
+        // double x0 = r*2;
+        // double y0 = ny/2.0;
+        // vk.O = ((vk.X - x0).square() + (vk.Y - y0).square() <= (r * r)).select(1.0, vk.O);
+
+        // x0 = 4.5 * r;
+        // y0 = ny/2.0 - 1.5*r;
+        // vk.O = (((vk.X - x0).square() + (vk.Y - y0).square() <= (r * r))).select(1.0, vk.O);
+        // x0 = 4.5 * r;
+        // y0 = ny/2.0 + 1.5*r;
+        // vk.O = (((vk.X - x0).square() + (vk.Y - y0).square() <= (r * r))).select(1.0, vk.O);
+
+        // x0 = nx * 0.1;
+        // y0 = ny/2.0 + 0.5;
+
+        // auto c = nx/4;
+        // auto t = sqrt((ny/10.0 + 1)/(1.1019*c));
+        // auto profile = (t*c/0.2)*(0.2969*((vk.X - x0) / c).sqrt() - 0.126 * (vk.X - x0)/c - 0.3516*((vk.X - x0) / c).square() +0.2843*((vk.X - x0)/c).pow(3) - 0.1015*((vk.X - x0)/c).pow(4))>= (vk.Y - y0).abs() && ((vk.X - x0) < c) ;
+        // vk.O = profile.select(1.0, vk.O);
     // }
 
-    Rectangle rect = {0,0,nx,ny};
-    // https://arcade.pirillo.com/maze-maker.html
-    vk.load_image("./maze4.png", rect);
+    // float h = ny*0.6;
+    // float w = h*0.75;
+    // Rectangle rect = {100,(ny-h)/2,w,h};
+    // vk.load_image("./amogus.png", rect);
+    float h = ny*0.6;
+    float w = h*1.5;
+    Rectangle rect = {20,(ny-h)/2,w,h};
+    vk.load_image("./gta.png", rect);
 
+
+
+    // https://arcade.pirillo.com/maze-maker.html
     if (flag_record) {
         recorder.start(width, height);
     } else {

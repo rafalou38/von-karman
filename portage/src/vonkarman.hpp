@@ -41,7 +41,7 @@ public:
 
 
     Color* pixels;
-    Texture2D texture;
+    std::array<Texture2D, 3> textures;
     Eigen::ArrayXXd display_mat;
 
 
