@@ -35,6 +35,15 @@ VonKarman::VonKarman() : is_running(false) {
         auto eiu = ex[i] * ux + ey[i] * uy;
         f[i] = w[i] * rho * (1 + 3 * eiu + 4.5 * eiu.square() - 1.5 * uu);
     }
+
+    particle_positions.resize(PART_CNT * PART_HIST_SZ * 2);
+    particle_lifetime.resize(PART_CNT);
+    for (int i = 0; i < PART_CNT; ++i) {
+        particle_lifetime[i] = rand() % (PART_HIST_SZ * PART_REM);
+        particle_positions[i * PART_HIST_SZ * 2 + 0] = (float)(rand() % nx);
+        particle_positions[i * PART_HIST_SZ * 2 + 1] = (float)(rand() % ny);
+    }
+
     std::cout << "Initialization complete." << std::endl;
 }
 
@@ -73,9 +82,9 @@ void VonKarman::load_image(const char *src, Rectangle rect) {
             c = GetImageColor(img, x, y);
 
             if (c.r + c.g + c.b < 100) {
-                O(y+(int)rect.y, x+(int)rect.x) = 1;
+                O(y + (int)rect.y, x + (int)rect.x) = 1;
             } else {
-                O(y+(int)rect.y, x+(int)rect.x) = 0;
+                O(y + (int)rect.y, x + (int)rect.x) = 0;
             }
         }
     }
@@ -272,84 +281,154 @@ void VonKarman::calcul() {
             w[i] * rho * (1.0 + 3.0 * eiu + 4.5 * eiu.square() - 1.5 * uu);
         f[i] = mask.select(f[i], f[i] - omega * (f[i] - f_eq));
     }
+
+    update_particles();
+}
+
+void VonKarman::update_particles() {
+    std::lock_guard<std::mutex> lock(mtx);
+
+    for (int i = 0; i < PART_CNT; ++i) {
+        int idx = particle_lifetime[i] % PART_HIST_SZ;
+
+        float x = particle_positions[i * PART_HIST_SZ * 2 + idx * 2 + 0];
+        float y = particle_positions[i * PART_HIST_SZ * 2 + idx * 2 + 1];
+
+        int x0 = static_cast<int>(std::floor(x));
+        int y0 = static_cast<int>(std::floor(y));
+        float x1 = x + ux(y0, x0) * 8.5; // Adjust the time step as needed
+        float y1 = y + uy(y0, x0) * 8.5; // Adjust the time step as needed
+
+        // Ensure the new position is within bounds
+        if (x1 < 0 || x1 >= nx || y1 < 0 || y1 >= ny ||
+            particle_lifetime[i] >= PART_HIST_SZ * PART_REM) {
+            // Reset particle to a random position if it goes out of bounds
+            x1 = rand() % nx;
+            y1 = rand() % ny;
+            particle_lifetime[i] = 0; // Reset lifetime
+        } else {
+            particle_lifetime[i]++;
+        }
+
+        int next_idx = (particle_lifetime[i] + 1) % PART_HIST_SZ;
+        particle_positions[i * PART_HIST_SZ * 2 + next_idx * 2 + 0] = x1;
+        particle_positions[i * PART_HIST_SZ * 2 + next_idx * 2 + 1] = y1;
+    }
 }
 
 Texture2D VonKarman::draw(DrawMode mode) {
-    display_mat.setZero();
+    if (mode != PARTICLES) {
 
-    double ex = 1;
+        display_mat.setZero();
 
-    switch (mode) {
-    case DENSITY:
-        display_mat = rho;
-        break;
-    case VELOCITY:
-        display_mat = ux.square() + uy.square();
-        ex = 0.3;
-        break;
-    case VORTICITY: {
-        std::lock_guard<std::mutex> lock(mtx);
+        double ex = 1;
 
-        display_mat.block(1, 1, ny - 2, nx - 2) =
-            0.5 * (uy.block(1, 2, ny - 2, nx - 2) -
-                   uy.block(1, 0, ny - 2, nx - 2)) -
-            0.5 * (ux.block(2, 1, ny - 2, nx - 2) -
-                   ux.block(0, 1, ny - 2, nx - 2));
-    }; break;
-    }
+        switch (mode) {
+        case DENSITY:
+            display_mat = rho;
+            break;
+        case VELOCITY:
+            display_mat = ux.square() + uy.square();
+            ex = 0.3;
+            break;
+        case VORTICITY: {
+            std::lock_guard<std::mutex> lock(mtx);
 
-    double m = display_mat.maxCoeff();
-    double mi = display_mat.minCoeff();
+            display_mat.block(1, 1, ny - 2, nx - 2) =
+                0.5 * (uy.block(1, 2, ny - 2, nx - 2) -
+                       uy.block(1, 0, ny - 2, nx - 2)) -
+                0.5 * (ux.block(2, 1, ny - 2, nx - 2) -
+                       ux.block(0, 1, ny - 2, nx - 2));
+        }; break;
+        default:
+            break;
+        }
 
-    if (mode == DENSITY) {
-        mi = 0.9;
-        m = 1.1;
-    } else if (mode == VELOCITY) {
-        mi = 0.0;
-        m = std::max(1e-6, m);
-    } else if (mode == VORTICITY) {
-        m = std::max({1e-6, std::abs(m), std::abs(mi)});
-        mi = -m;
-    }
+        double m = display_mat.maxCoeff();
+        double mi = display_mat.minCoeff();
 
-    display_mat = (display_mat - mi) / (m - mi);
+        if (mode == DENSITY) {
+            mi = 0.9;
+            m = 1.1;
+        } else if (mode == VELOCITY) {
+            mi = 0.0;
+            m = std::max(1e-6, m);
+        } else if (mode == VORTICITY) {
+            m = std::max({1e-6, std::abs(m), std::abs(mi)});
+            mi = -m;
+        }
 
-    for (int x = 0; x < nx; x++) {
-        for (int y = 0; y < ny; y++) {
-            int index = y * nx + x;
+        display_mat = (display_mat - mi) / (m - mi);
 
-            if (O(y, x) == 1.0) {
-                pixels[index] = BLACK;
-            } else {
-                double u;
+        for (int x = 0; x < nx; x++) {
+            for (int y = 0; y < ny; y++) {
+                int index = y * nx + x;
+
+                if (O(y, x) == 1.0) {
+                    pixels[index] = BLACK;
+                } else {
+                    double u;
 
                     Color out;
-                if (mode == VORTICITY) {
-                    u = 1.0 / (1 + exp(-20.0 * (display_mat(y, x) - 0.5)));
-                    Color colorA = GetColor(0xff0000ff);
-                    Color colorB = GetColor(0xffffffff);
-                    Color colorC = GetColor(0x0000ffff);
-                    // Color colorA = GetColor(0xec8c5aff);
-                    // Color colorB = GetColor(0xcf56c6ff);
-                    // Color colorC = GetColor(0x375edaff);
-                    if (u < 0.5)
-                        out = ColorLerp(colorA, colorB, u * 2);
-                    else
-                        out = ColorLerp(colorB, colorC, (u - 0.5) * 2);
-                } else {
-                    Color colorA = GetColor(0x190F3Cff);
-                    Color colorB = GetColor(0x3746FFff);
-                    Color colorC = GetColor(0xFF808Bff);
-                    u = pow(display_mat(y, x), ex);
-                    if (u < 0.5)
-                        out = ColorLerp(colorA, colorB, u * 2);
-                    else
-                        out = ColorLerp(colorB, colorC, (u - 0.5) * 2);
+                    if (mode == VORTICITY) {
+                        u = 1.0 / (1 + exp(-20.0 * (display_mat(y, x) - 0.5)));
+                        Color colorA = GetColor(0xff0000ff);
+                        Color colorB = GetColor(0xffffffff);
+                        Color colorC = GetColor(0x0000ffff);
+                        // Color colorA = GetColor(0xec8c5aff);
+                        // Color colorB = GetColor(0xcf56c6ff);
+                        // Color colorC = GetColor(0x375edaff);
+                        if (u < 0.5)
+                            out = ColorLerp(colorA, colorB, u * 2);
+                        else
+                            out = ColorLerp(colorB, colorC, (u - 0.5) * 2);
+                    } else {
+                        Color colorA = GetColor(0x190F3Cff);
+                        Color colorB = GetColor(0x3746FFff);
+                        Color colorC = GetColor(0xFF808Bff);
+                        u = pow(display_mat(y, x), ex);
+                        if (u < 0.5)
+                            out = ColorLerp(colorA, colorB, u * 2);
+                        else
+                            out = ColorLerp(colorB, colorC, (u - 0.5) * 2);
+                    }
+                    pixels[index] = out;
                 }
-                pixels[index] = out;
+            }
+        }
+    } else {
+
+        for (int x = 0; x < nx; x++) {
+            for (int y = 0; y < ny; y++) {
+                int index = y * nx + x;
+                if (O(y, x) == 1.0) {
+                    pixels[index] = WHITE;
+                } else {
+                    pixels[index] = Color{24, 24, 24, 255}; // Black background
+                }
+            }
+        }
+
+        for (int i = 0; i < PART_CNT; ++i) {
+            for (int j = 0; j < PART_HIST_SZ;
+                 ++j) {
+                int idx = (particle_lifetime[i] + j) % PART_HIST_SZ;
+                float x =
+                    particle_positions[i * PART_HIST_SZ * 2 + idx * 2 + 0];
+                float y =
+                    particle_positions[i * PART_HIST_SZ * 2 + idx * 2 + 1];
+
+                if (x >= 0 && x < nx && y >= 0 && y < ny) {
+                    int index = static_cast<int>(y) * nx + static_cast<int>(x);
+                    if (pixels[index].g + 5 > 255)
+                        pixels[index].g = 255; // Clamp to 255
+                    else
+                        pixels[index].g += 5;
+                }
             }
         }
     }
+
     Texture2D &texture = textures[static_cast<int>(mode)];
     UpdateTexture(texture, pixels);
     return texture;

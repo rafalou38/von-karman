@@ -6,13 +6,17 @@
 #include <atomic>
 #include <thread>
 #include <mutex>
+#include <vector>
 
 #include "consts.hpp"
 
 using Eigen::MatrixXd;
 using Eigen::ArrayXXd;
 
-enum DrawMode { VELOCITY, VORTICITY,DENSITY };
+enum DrawMode { VELOCITY, VORTICITY,DENSITY,PARTICLES };
+
+
+
 
 class VonKarman
 {
@@ -28,6 +32,10 @@ public:
     std::array<ArrayXXd, 9> f;
     std::array<ArrayXXd, 9> f_temp;
 
+    std::vector<float> particle_positions;
+    // std::vector<int> particle_index;
+    std::vector<int> particle_lifetime;
+
     ArrayXXd vorticity;
 
     ArrayXXd O;
@@ -41,7 +49,7 @@ public:
 
 
     Color* pixels;
-    std::array<Texture2D, 3> textures;
+    std::array<Texture2D, 4> textures;
     Eigen::ArrayXXd display_mat;
 
 
@@ -56,6 +64,7 @@ public:
     void calcul();   
     void source();   
     void time_calc();
+    void update_particles();
 
     void load_image(const char* src, Rectangle rect);
 
