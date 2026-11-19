@@ -1,4 +1,7 @@
 eigen-5.0.1/
 vonkarm
+vonkarm_maze
 *.o
 *.mkv
+*.png
+*.webp
