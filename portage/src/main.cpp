@@ -82,9 +82,9 @@ int main(int argc, char *argv[]) {
         // auto profile = (t*c/0.2)*(0.2969*((vk.X - x0) / c).sqrt() - 0.126 * (vk.X - x0)/c - 0.3516*((vk.X - x0) / c).square() +0.2843*((vk.X - x0)/c).pow(3) - 0.1015*((vk.X - x0)/c).pow(4))>= (vk.Y - y0).abs() && ((vk.X - x0) < c) ;
         // vk.O = profile.select(1.0, vk.O);
     // }
-    double r = 0.2 * ny + 0.5;
+    double r = 0.1 * ny + 0.5;
     auto cylindre =
-        ((vk.X - nx*0.25).square() + (vk.Y - ny/2).square() <= (r * r));
+        ((vk.X - nx/5).square() + (vk.Y - ny/2+3).square() <= (r * r));
     vk.O = cylindre.select(1.0, vk.O);
 
 
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
     Texture2D buffer1;
     Texture2D buffer2;
 
-    DrawMode current_mode = PARTICLES;
+    DrawMode current_mode = VELOCITY;
 
     int prev_frame_draw = 0;
     while (!WindowShouldClose()) {
@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
         if(flag_interactive){
             if (IsKeyPressed(KEY_TAB)) {
                 current_mode = static_cast<DrawMode>(
-                    (static_cast<int>(current_mode) + 1) % 4);
+                    (static_cast<int>(current_mode) + 1) % 3);
             }
         }
 

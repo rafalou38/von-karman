@@ -6,8 +6,8 @@
 #define nx 400
 #define ny 100
 
-#define umax 0.05
-#define nu 0.015
+#define umax 0.1
+#define nu 0.02
 #define tau ((6*nu+1)/2)
 
 #define OBSTACLE Color{60, 50, 168, 255}
