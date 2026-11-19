@@ -213,16 +213,16 @@ void VonKarman::calcul() {
     // incidentes
     for (int k = 0; k < 9; ++k) {
         // Bord Gauche (x = 0)
-        f[k].col(0) = f[k].col(1);
+        // f[k].col(0) = f[k].col(1);
 
         // Bord Droit (x = nx-1)
         f[k].col(nx - 1) = f[k].col(nx - 2);
 
-        // Bord Bas (y = 0)
-        f[k].row(0) = f[k].row(1);
+        // // Bord Bas (y = 0)
+        // f[k].row(0) = f[k].row(1);
 
-        // Bord Haut (y = ny-1)
-        f[k].row(ny - 1) = f[k].row(ny - 2);
+        // // Bord Haut (y = ny-1)
+        // f[k].row(ny - 1) = f[k].row(ny - 2);
     }
 
     // -> Paroi
@@ -326,12 +326,12 @@ Texture2D VonKarman::draw(DrawMode mode) {
                     Color out;
                 if (mode == VORTICITY) {
                     u = 1.0 / (1 + exp(-20.0 * (display_mat(y, x) - 0.5)));
-                    // Color colorA = GetColor(0xff0000ff);
-                    // Color colorB = GetColor(0xffffffff);
-                    // Color colorC = GetColor(0x0000ffff);
-                    Color colorA = GetColor(0xec8c5aff);
-                    Color colorB = GetColor(0xcf56c6ff);
-                    Color colorC = GetColor(0x375edaff);
+                    Color colorA = GetColor(0xff0000ff);
+                    Color colorB = GetColor(0xffffffff);
+                    Color colorC = GetColor(0x0000ffff);
+                    // Color colorA = GetColor(0xec8c5aff);
+                    // Color colorB = GetColor(0xcf56c6ff);
+                    // Color colorC = GetColor(0x375edaff);
                     if (u < 0.5)
                         out = ColorLerp(colorA, colorB, u * 2);
                     else
