@@ -3,10 +3,10 @@
 // #define ny (2846/2)
 // #define nx (512*factor)
 // #define ny (512*factor)
-#define nx 400
-#define ny 100
+#define nx 800
+#define ny 400
 
-#define umax 0.1
+#define umax 0.05
 #define nu 0.02
 #define tau ((6*nu+1)/2)
 
@@ -14,7 +14,7 @@
 #define NEUTRAL Color{168, 50, 60, 255}
 
 // #define PARALLEL_COMPUTE
-#define ITER_PER_FRAME 20
+#define ITER_PER_FRAME 15
 // #define RECORD
 
 #define SCALING 1.0

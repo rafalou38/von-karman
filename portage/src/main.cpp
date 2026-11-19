@@ -82,16 +82,22 @@ int main(int argc, char *argv[]) {
         // auto profile = (t*c/0.2)*(0.2969*((vk.X - x0) / c).sqrt() - 0.126 * (vk.X - x0)/c - 0.3516*((vk.X - x0) / c).square() +0.2843*((vk.X - x0)/c).pow(3) - 0.1015*((vk.X - x0)/c).pow(4))>= (vk.Y - y0).abs() && ((vk.X - x0) < c) ;
         // vk.O = profile.select(1.0, vk.O);
     // }
-    double r = 0.1 * ny + 0.5;
-    auto cylindre =
-        ((vk.X - nx*0.25).square() + (vk.Y - ny/2).square() <= (r * r));
-    vk.O = cylindre.select(1.0, vk.O);
+    // double r = 0.1 * ny + 0.5;
+    // auto cylindre =
+    //     ((vk.X - nx*0.25).square() + (vk.Y - ny/2).square() <= (r * r));
+    // vk.O = cylindre.select(1.0, vk.O);
 
 
     // float h = ny*0.6;
     // float w = h*0.75;
     // Rectangle rect = {100,(ny-h)/2,w,h};
     // vk.load_image("./amogus.png", rect);
+
+    float h = ny*0.6;
+    float w = h*1.29;
+    Rectangle rect = {100,(ny-h)/2,w,h};
+    vk.load_image("./gta.png", rect);
+
     // float h = ny*0.6;
     // float w = h*1.5;
     // Rectangle rect = {20,(ny-h)/2,w,h};
