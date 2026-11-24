@@ -15,3 +15,5 @@ function f_out = collision(O, f, rho, ux, uy)
         f_out(j,:,:) = O .* squeeze(temp) + (1 - O) .* squeeze(f_out(j,:,:));
     end
 end
+
+f[i,:,:] = O * f[j,:,:] + (1 - O) * f[i,:,:];

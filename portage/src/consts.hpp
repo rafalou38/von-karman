@@ -3,8 +3,8 @@
 // #define ny (2846/2)
 // #define nx (512*factor)
 // #define ny (512*factor)
-#define nx 400
-#define ny 100
+#define nx 1600
+#define ny 400
 
 #define umax 0.1
 #define nu 0.02
@@ -17,11 +17,11 @@
 #define ITER_PER_FRAME 15
 // #define RECORD
 
-#define PART_CNT 10000
-#define PART_HIST_SZ 30
+#define PART_CNT 100000
+#define PART_HIST_SZ 50
 #define PART_REM 5
 
-#define SCALING 1.0
+#define SCALING 2.0
 
 const int ex[] = { 0, 1, 0, -1, 0, 1, -1, -1, 1 };
 const int ey[] = { 0, 0, 1, 0, -1, 1, 1, -1, -1 };

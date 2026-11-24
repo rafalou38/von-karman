@@ -54,7 +54,6 @@ int main(int argc, char *argv[]) {
         height *= 2;
     }
 
-
     SetTraceLogLevel(LOG_WARNING);
     SetConfigFlags(FLAG_MSAA_4X_HINT);
 
@@ -62,31 +61,32 @@ int main(int argc, char *argv[]) {
 
     vk.init();
     // if (!flag_interactive) {
-        // double r = 0.1 * ny + 0.5;
-        // double x0 = r*2;
-        // double y0 = ny/2.0;
-        // vk.O = ((vk.X - x0).square() + (vk.Y - y0).square() <= (r * r)).select(1.0, vk.O);
+    // double r = 0.1 * ny + 0.5;
+    // double x0 = r*2;
+    // double y0 = ny/2.0;
+    // vk.O = ((vk.X - x0).square() + (vk.Y - y0).square() <= (r *
+    // r)).select(1.0, vk.O);
 
-        // x0 = 4.5 * r;
-        // y0 = ny/2.0 - 1.5*r;
-        // vk.O = (((vk.X - x0).square() + (vk.Y - y0).square() <= (r * r))).select(1.0, vk.O);
-        // x0 = 4.5 * r;
-        // y0 = ny/2.0 + 1.5*r;
-        // vk.O = (((vk.X - x0).square() + (vk.Y - y0).square() <= (r * r))).select(1.0, vk.O);
+    // x0 = 4.5 * r;
+    // y0 = ny/2.0 - 1.5*r;
+    // vk.O = (((vk.X - x0).square() + (vk.Y - y0).square() <= (r *
+    // r))).select(1.0, vk.O); x0 = 4.5 * r; y0 = ny/2.0 + 1.5*r; vk.O = (((vk.X
+    // - x0).square() + (vk.Y - y0).square() <= (r * r))).select(1.0, vk.O);
 
-        // x0 = nx * 0.1;
-        // y0 = ny/2.0 + 0.5;
+    // x0 = nx * 0.1;
+    // y0 = ny/2.0 + 0.5;
 
-        // auto c = nx/4;
-        // auto t = sqrt((ny/10.0 + 1)/(1.1019*c));
-        // auto profile = (t*c/0.2)*(0.2969*((vk.X - x0) / c).sqrt() - 0.126 * (vk.X - x0)/c - 0.3516*((vk.X - x0) / c).square() +0.2843*((vk.X - x0)/c).pow(3) - 0.1015*((vk.X - x0)/c).pow(4))>= (vk.Y - y0).abs() && ((vk.X - x0) < c) ;
-        // vk.O = profile.select(1.0, vk.O);
+    // auto c = nx/4;
+    // auto t = sqrt((ny/10.0 + 1)/(1.1019*c));
+    // auto profile = (t*c/0.2)*(0.2969*((vk.X - x0) / c).sqrt() - 0.126 * (vk.X
+    // - x0)/c - 0.3516*((vk.X - x0) / c).square() +0.2843*((vk.X -
+    // x0)/c).pow(3) - 0.1015*((vk.X - x0)/c).pow(4))>= (vk.Y - y0).abs() &&
+    // ((vk.X - x0) < c) ; vk.O = profile.select(1.0, vk.O);
     // }
     double r = 0.1 * ny + 0.5;
     auto cylindre =
-        ((vk.X - nx/5).square() + (vk.Y - ny/2+3).square() <= (r * r));
+        ((vk.X - nx / 5).square() + (vk.Y - ny / 2 + 3).square() <= (r * r));
     vk.O = cylindre.select(1.0, vk.O);
-
 
     // float h = ny*0.6;
     // float w = h*0.75;
@@ -103,22 +103,20 @@ int main(int argc, char *argv[]) {
     // Rectangle rect = {20,(ny-h)/2,w,h};
     // vk.load_image("./gta.png", rect);
 
-
-
     // https://arcade.pirillo.com/maze-maker.html
     if (flag_record) {
-        recorder.start(width, height);
+        recorder.start(nx, ny);
     } else {
         // Démarrage de la simulation en background
         SetTargetFPS(60);
         vk.start();
     }
 
-    RenderTexture2D target = LoadRenderTexture(width, height);
+    RenderTexture2D target = LoadRenderTexture(nx, ny);
     Texture2D buffer1;
     Texture2D buffer2;
 
-    DrawMode current_mode = VELOCITY;
+    DrawMode current_mode = PARTICLES;
 
     int prev_frame_draw = 0;
     while (!WindowShouldClose()) {
@@ -126,10 +124,10 @@ int main(int argc, char *argv[]) {
             vk.time_calc();
         }
 
-        if(flag_interactive){
+        if (flag_interactive) {
             if (IsKeyPressed(KEY_TAB)) {
                 current_mode = static_cast<DrawMode>(
-                    (static_cast<int>(current_mode) + 1) % 3);
+                    (static_cast<int>(current_mode) + 1) % 4);
             }
         }
 
@@ -141,11 +139,14 @@ int main(int argc, char *argv[]) {
         }
         BeginDrawing();
         ClearBackground(BLACK);
-        DrawTextureRec(buffer1, Rectangle{0, 0, nx, ny}, Vector2{0, 0}, WHITE);
+        // DrawTextureRec(buffer1, Rectangle{0, 0, nx, ny}, Vector2{0, 0},
+        // WHITE);
+        DrawTextureEx(buffer1, Vector2{0, 0}, 0, SCALING, WHITE);
 
-        if(dual) {
-            DrawTextureRec(buffer2, Rectangle{0, 0, nx, ny}, Vector2{0, ny},
-                           WHITE);
+        if (dual) {
+            // DrawTextureRec(buffer2, Rectangle{0, 0, nx, ny}, Vector2{0, ny},
+            //    WHITE);
+            DrawTextureEx(buffer2, Vector2{0, ny * SCALING}, 0, SCALING, WHITE);
         }
 
         char txt[100];
@@ -167,10 +168,9 @@ int main(int argc, char *argv[]) {
 
         EndDrawing();
 
-
         if (flag_record && vk.iteration - prev_frame_draw >= ITER_PER_FRAME) {
             prev_frame_draw = vk.iteration;
-            if(!dual) {
+            if (!dual) {
                 buffer1 = vk.draw(VORTICITY);
                 buffer2 = vk.draw(VELOCITY);
             }
