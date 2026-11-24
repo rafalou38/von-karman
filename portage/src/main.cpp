@@ -21,6 +21,9 @@ VonKarman vk;
 bool flag_record = false;
 bool flag_interactive = false;
 
+DrawMode top_mode = PARTICLES;
+DrawMode bottom_mode = VORTICITY;
+
 Recorder recorder;
 
 int main(int argc, char *argv[]) {
@@ -83,15 +86,15 @@ int main(int argc, char *argv[]) {
     // x0)/c).pow(3) - 0.1015*((vk.X - x0)/c).pow(4))>= (vk.Y - y0).abs() &&
     // ((vk.X - x0) < c) ; vk.O = profile.select(1.0, vk.O);
     // }
-    double r = 0.1 * ny + 0.5;
-    auto cylindre =
-        ((vk.X - nx / 5).square() + (vk.Y - ny / 2 + 3).square() <= (r * r));
-    vk.O = cylindre.select(1.0, vk.O);
+    // double r = 0.1 * ny + 0.5;
+    // auto cylindre =
+    //     ((vk.X - nx / 5).square() + (vk.Y - ny / 2 + 3).square() <= (r * r));
+    // vk.O = cylindre.select(1.0, vk.O);
 
-    // float h = ny*0.6;
-    // float w = h*0.75;
-    // Rectangle rect = {100,(ny-h)/2,w,h};
-    // vk.load_image("./amogus.png", rect);
+    float h = ny * 0.6;
+    float w = h * 0.75;
+    Rectangle rect = {100, (ny - h) / 2, w, h};
+    vk.load_image("./amogus.png", rect);
 
     // float h = ny*0.6;
     // float w = h*1.29;
@@ -105,18 +108,23 @@ int main(int argc, char *argv[]) {
 
     // https://arcade.pirillo.com/maze-maker.html
     if (flag_record) {
-        recorder.start(nx, ny);
+        if (dual)
+            recorder.start(nx, ny * 2);
+        else
+            recorder.start(nx, ny);
     } else {
         // Démarrage de la simulation en background
         SetTargetFPS(60);
         vk.start();
     }
 
-    RenderTexture2D target = LoadRenderTexture(nx, ny);
+    RenderTexture2D target;
+    if (dual)
+        target = LoadRenderTexture(nx, ny * 2);
+    else
+        target = LoadRenderTexture(nx, ny);
     Texture2D buffer1;
     Texture2D buffer2;
-
-    DrawMode current_mode = PARTICLES;
 
     int prev_frame_draw = 0;
     while (!WindowShouldClose()) {
@@ -126,16 +134,16 @@ int main(int argc, char *argv[]) {
 
         if (flag_interactive) {
             if (IsKeyPressed(KEY_TAB)) {
-                current_mode = static_cast<DrawMode>(
-                    (static_cast<int>(current_mode) + 1) % 4);
+                top_mode = static_cast<DrawMode>(
+                    (static_cast<int>(top_mode) + 1) % 4);
             }
         }
 
         if (dual) {
-            buffer1 = vk.draw(VORTICITY);
-            buffer2 = vk.draw(VELOCITY);
+            buffer1 = vk.draw(top_mode);
+            buffer2 = vk.draw(bottom_mode);
         } else {
-            buffer1 = vk.draw(current_mode);
+            buffer1 = vk.draw(top_mode);
         }
         BeginDrawing();
         ClearBackground(BLACK);
@@ -171,8 +179,8 @@ int main(int argc, char *argv[]) {
         if (flag_record && vk.iteration - prev_frame_draw >= ITER_PER_FRAME) {
             prev_frame_draw = vk.iteration;
             if (!dual) {
-                buffer1 = vk.draw(VORTICITY);
-                buffer2 = vk.draw(VELOCITY);
+                buffer1 = vk.draw(top_mode);
+                buffer2 = vk.draw(bottom_mode);
             }
             BeginTextureMode(target);
             DrawTextureRec(buffer1, Rectangle{0, 0, nx, ny}, Vector2{0, 0},
