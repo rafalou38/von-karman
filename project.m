@@ -49,7 +49,7 @@ for i=1:it_cnt
     f = propagation(f);
 
 
-    if mod(i, 1) == 0
+    if mod(i, 5) == 0
         fprintf("%.2f\t%d/%d\n", i/it_cnt * 100, i, it_cnt)
 
         cla(ax);
@@ -58,12 +58,8 @@ for i=1:it_cnt
         hold on;
         
         v = ux.^2 + uy.^2;
-        % [curlz, cav] = curl(X, Y, ux,uy);
-        
         
         imagesc(ax, v);
-        % imagesc(curlz);
-
         imagesc(ax, cat(3, 0 * O, 0 * O, 0 * O), AlphaData=O);
         
 
@@ -71,26 +67,6 @@ for i=1:it_cnt
         axis(ax, "equal");
         axis(ax, "off");
 
-
-        % h = streamline(ux,    uy, startX, startY,[0.1, 10000] , LineWidth=1, Color="w");
-        % % h = streamline(ux, uy, startX, startY);
-        % for k = 1:length(h)
-        %     h(k).Color(4) = 0.3;
-        % end
-        
-
-        % Transparence alpha (si supportée par ta version)
-      
-
-        % [C, h] = contour(X, Y, curlz, 2, LineColor="w", LineWidth=1.5);
-
-        % subplot(2,1,1);
-        % imagesc(ux);
-        % subplot(2,1,2);
-        % imagesc(uy);
-
-        % w = [zeros(1, nx); diff(uy, 1, 1)] - [diff(ux, 1, 2) zeros(ny, 1)];
-        
         frame = getframe(fig);
         frame.cdata = imresize(frame.cdata, [ny,nx]);
         writeVideo(vid,frame);

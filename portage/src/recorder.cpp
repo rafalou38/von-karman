@@ -30,8 +30,7 @@ Recorder::~Recorder() {
 
 void Recorder::record_frame(Texture2D texture){
     Image screen = LoadImageFromTexture(texture);
-    ImageFlipVertical(&screen); // Indispensable : OpenGL stocke les
-                                // textures à l'envers
+    ImageFlipVertical(&screen);
     fwrite(screen.data, 1, screen.width * screen.height * 4, ffmpeg);
     UnloadImage(screen);
 }

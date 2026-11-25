@@ -1,16 +1,9 @@
-// SPDX-FileCopyrightText: The Eigen Authors
-// SPDX-License-Identifier: MPL-2.0
-
 #include <Eigen/Dense>
-#include <chrono>
-#include <cstdint>
 #include <cstdio>
-#include <ctime>
 #include <iostream>
 
 #include <ostream>
 #include <raylib.h>
-#include <raymath.h>
 
 #include "recorder.hpp"
 #include "vonkarman.hpp"
@@ -115,8 +108,8 @@ int main(int argc, char *argv[]) {
     } else {
         // Démarrage de la simulation en background
         SetTargetFPS(60);
-        vk.start();
     }
+    vk.start();
 
     RenderTexture2D target;
     if (dual)
@@ -129,7 +122,7 @@ int main(int argc, char *argv[]) {
     int prev_frame_draw = 0;
     while (!WindowShouldClose()) {
         if (flag_record) {
-            vk.time_calc();
+            // vk.time_calc();
         }
 
         if (flag_interactive) {

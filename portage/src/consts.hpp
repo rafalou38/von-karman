@@ -14,14 +14,15 @@
 #define NEUTRAL Color{168, 50, 60, 255}
 
 // #define PARALLEL_COMPUTE
-#define ITER_PER_FRAME 15
+#define ITER_PER_FRAME 10
 // #define RECORD
 
-#define PART_CNT 30000
+#define PART_DENSITY 0.15
+#define PART_CNT (PART_DENSITY * nx * ny)
 #define PART_HIST_SZ 50
 #define PART_REM 5
 
-#define SCALING 2.0
+#define SCALING 3.0
 
 const int ex[] = { 0, 1, 0, -1, 0, 1, -1, -1, 1 };
 const int ey[] = { 0, 0, 1, 0, -1, 1, 1, -1, -1 };

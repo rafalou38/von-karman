@@ -140,7 +140,6 @@ void VonKarman::source() {
 
     // Calcul de l'équilibre pour la source
     double u2 = ux_source * ux_source + uy_source * uy_source;
-
     for (int k = 0; k < 9; ++k) {
         double eu = ex[k] * ux_source + ey[k] * uy_source;
 
@@ -218,20 +217,9 @@ void VonKarman::calcul() {
 
     // source();
 
-    // Application du gradient nul sur les 4 bords pour absorber les particules
-    // incidentes
+    // elimination des particules en sortie.
     for (int k = 0; k < 9; ++k) {
-        // Bord Gauche (x = 0)
-        // f[k].col(0) = f[k].col(1);
-
-        // Bord Droit (x = nx-1)
         f[k].col(nx - 1) = f[k].col(nx - 2);
-
-        // // Bord Bas (y = 0)
-        // f[k].row(0) = f[k].row(1);
-
-        // // Bord Haut (y = ny-1)
-        // f[k].row(ny - 1) = f[k].row(ny - 2);
     }
 
     // -> Paroi
@@ -296,16 +284,14 @@ void VonKarman::update_particles() {
 
         int x0 = static_cast<int>(std::floor(x));
         int y0 = static_cast<int>(std::floor(y));
-        float x1 = x + ux(y0, x0) * 8.5; // Adjust the time step as needed
-        float y1 = y + uy(y0, x0) * 8.5; // Adjust the time step as needed
+        float x1 = x + ux(y0, x0) * 7.0;
+        float y1 = y + uy(y0, x0) * 7.0;
 
-        // Ensure the new position is within bounds
         if (x1 < 0 || x1 >= nx || y1 < 0 || y1 >= ny ||
             particle_lifetime[i] >= PART_HIST_SZ * PART_REM) {
-            // Reset particle to a random position if it goes out of bounds
             x1 = rand() % nx;
             y1 = rand() % ny;
-            particle_lifetime[i] = 0; // Reset lifetime
+            particle_lifetime[i] = 0;
         } else {
             particle_lifetime[i]++;
         }
@@ -404,7 +390,7 @@ Texture2D VonKarman::draw(DrawMode mode) {
                 if (O(y, x) == 1.0) {
                     pixels[index] = WHITE;
                 } else {
-                    pixels[index] = Color{24, 24, 24, 255}; // Black background
+                    pixels[index] = Color{24, 24, 24, 255}; // background
                 }
             }
         }
@@ -421,7 +407,7 @@ Texture2D VonKarman::draw(DrawMode mode) {
                 if (x >= 0 && x < nx && y >= 0 && y < ny) {
                     int index = static_cast<int>(y) * nx + static_cast<int>(x);
                     if (pixels[index].g + 5 > 255)
-                        pixels[index].g = 255; // Clamp to 255
+                        pixels[index].g = 255;
                     else
                         pixels[index].g += 5;
                 }
