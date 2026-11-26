@@ -84,10 +84,26 @@ int main(int argc, char *argv[]) {
     //     ((vk.X - nx / 5).square() + (vk.Y - ny / 2 + 3).square() <= (r * r));
     // vk.O = cylindre.select(1.0, vk.O);
 
-    float h = ny * 0.6;
-    float w = h * 0.75;
-    Rectangle rect = {100, (ny - h) / 2, w, h};
-    vk.load_image("./amogus.png", rect);
+    // float h = ny * 0.6;
+    // float w = h * 0.75;
+    // Rectangle rect = {100, (ny - h) / 2, w, h};
+    // vk.load_image("./amogus.png", rect);
+
+    // profil 400x100
+    // Obstacle: 4 murs successifs: trous: milieu; bas; haut; deux trous
+
+    // Mur 1
+    vk.O = ((vk.X - nx * 1 / 6).abs() <= 3  && (vk.Y - ny / 2).abs() >= 20).select(1.0, vk.O);
+
+    // Mur 2
+    vk.O = ((vk.X - nx * 2 / 6).abs() <= 3 && vk.Y <= ny - 40).select(1.0, vk.O);
+
+    // Mur 3
+    vk.O = ((vk.X - nx * 3 / 6).abs() <= 3 && vk.Y >= 40).select(1.0, vk.O);
+
+    // Mur 4
+    vk.O = ((vk.X - nx * 4 / 6).abs() <= 3 && (vk.Y - ny / 2).abs() <= ny/2-40).select(1.0, vk.O);
+    
 
     // float h = ny*0.6;
     // float w = h*1.29;

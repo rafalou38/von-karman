@@ -6,7 +6,7 @@
 #define nx 800
 #define ny 200
 
-#define umax 0.1
+#define umax 0.03
 #define nu 0.02
 #define tau ((6*nu+1)/2)
 
