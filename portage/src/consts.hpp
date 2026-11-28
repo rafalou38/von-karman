@@ -13,9 +13,7 @@
 #define OBSTACLE Color{60, 50, 168, 255}
 #define NEUTRAL Color{168, 50, 60, 255}
 
-// #define PARALLEL_COMPUTE
 #define ITER_PER_FRAME 10
-// #define RECORD
 
 #define PART_DENSITY 0.15
 #define PART_CNT (PART_DENSITY * nx * ny)
